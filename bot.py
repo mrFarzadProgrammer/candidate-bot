@@ -2,7 +2,7 @@
 import os
 import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
 # توکن بات
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '8327912063:AAEh4Q_mrVsAl9GYiSLTnQH-Cg251RxCyCY')
@@ -18,7 +18,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # دستور /start
-def start(update: Update, context: CallbackContext):
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         keyboard = [
             [InlineKeyboardButton("معرفی کاندید", callback_data="candidate_info")],
@@ -30,7 +30,7 @@ def start(update: Update, context: CallbackContext):
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
         
-        update.message.reply_text(
+        await update.message.reply_text(
             "🌟 به بات کاندید خوش آمدید!\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
             reply_markup=reply_markup
         )
@@ -39,8 +39,10 @@ def start(update: Update, context: CallbackContext):
         logger.error(f"Error in start command: {e}")
 
 # توابع callback برای دکمه‌ها
-def candidate_callback(update: Update, context: CallbackContext):
+async def candidate_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+    
     candidate_text = """
 👨‍💼 **معرفی کاندید:**
 
@@ -50,48 +52,52 @@ def candidate_callback(update: Update, context: CallbackContext):
   • دکترای مهندسی کامپیوتر - دانشگاه تهران
   • کارشناسی ارشد مدیریت کسب و کار - دانشگاه شریف
 """
-    query.edit_message_text(candidate_text)
-    show_back_button(update, context)
+    await query.edit_message_text(candidate_text)
+    await show_back_button(update, context)
 
-def photos_callback(update: Update, context: CallbackContext):
+async def photos_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+    
     try:
-        query.edit_message_text("📸 در حال بارگذاری عکس‌ها...")
+        await query.edit_message_text("📸 در حال بارگذاری عکس‌ها...")
         
         # ارسال عکس‌ها
-        context.bot.send_photo(
+        await context.bot.send_photo(
             chat_id=query.message.chat_id,
             photo="https://picsum.photos/400/300",
             caption="عکس رسمی کاندید"
         )
         
-        context.bot.send_photo(
+        await context.bot.send_photo(
             chat_id=query.message.chat_id,
             photo="https://picsum.photos/400/301",
             caption="عکس در محیط کاری"
         )
         
-        show_back_button_after_photos(update, context)
+        await show_back_button_after_photos(update, context)
         
     except Exception as e:
         logger.error(f"Error in photos_callback: {e}")
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=query.message.chat_id,
             text="⚠️ خطا در دریافت عکس‌ها"
         )
 
-def show_back_button_after_photos(update: Update, context: CallbackContext):
+async def show_back_button_after_photos(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     keyboard = [[InlineKeyboardButton("بازگشت به منوی اصلی", callback_data="main_menu")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=query.message.chat_id,
         text="برای بازگشت به منوی اصلی از دکمه زیر استفاده کنید:",
         reply_markup=reply_markup
     )
 
-def resume_callback(update: Update, context: CallbackContext):
+async def resume_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+    
     resume_text = """
 📄 **رزومه کاری**
     
@@ -103,11 +109,13 @@ def resume_callback(update: Update, context: CallbackContext):
 • راه‌اندازی ۵ استارت‌آپ موفق
 • دریافت جایزه بهترین مدیر جوان
 """
-    query.edit_message_text(resume_text)
-    show_back_button(update, context)
+    await query.edit_message_text(resume_text)
+    await show_back_button(update, context)
 
-def ideas_callback(update: Update, context: CallbackContext):
+async def ideas_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+    
     ideas_text = """
 💡 **ایده‌ها و برنامه‌ها**
     
@@ -119,11 +127,13 @@ def ideas_callback(update: Update, context: CallbackContext):
 • حمایت از کسب‌وکارهای کوچک
 • جذب سرمایه‌گذاری خارجی
 """
-    query.edit_message_text(ideas_text)
-    show_back_button(update, context)
+    await query.edit_message_text(ideas_text)
+    await show_back_button(update, context)
 
-def addresses_callback(update: Update, context: CallbackContext):
+async def addresses_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+    
     addresses_text = """
 📍 **آدرس ستادهای انتخاباتی**
     
@@ -134,11 +144,13 @@ def addresses_callback(update: Update, context: CallbackContext):
 🏢 ستاد منطقه ۱:
 تهران، میدان ونک، خیابان ملاصدرا
 """
-    query.edit_message_text(addresses_text)
-    show_back_button(update, context)
+    await query.edit_message_text(addresses_text)
+    await show_back_button(update, context)
 
-def contact_callback(update: Update, context: CallbackContext):
+async def contact_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+    
     contact_text = """
 📞 **ارتباط با من**
 
@@ -161,23 +173,25 @@ def contact_callback(update: Update, context: CallbackContext):
     context.user_data['waiting_for_contact'] = True
     context.user_data['contact_messages'] = []
     
-    query.edit_message_text(
+    await query.edit_message_text(
         contact_text,
         reply_markup=reply_markup
     )
 
-def show_back_button(update: Update, context: CallbackContext):
+async def show_back_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     keyboard = [[InlineKeyboardButton("بازگشت به منوی اصلی", callback_data="main_menu")]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    context.bot.send_message(
+    await context.bot.send_message(
         chat_id=query.message.chat_id,
         text="برای بازگشت به منوی اصلی از دکمه زیر استفاده کنید:",
         reply_markup=reply_markup
     )
 
-def show_main_menu(update: Update, context: CallbackContext):
+async def show_main_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
+    
     keyboard = [
         [InlineKeyboardButton("معرفی کاندید", callback_data="candidate_info")],
         [InlineKeyboardButton("عکس‌ها", callback_data="photos")],
@@ -194,13 +208,14 @@ def show_main_menu(update: Update, context: CallbackContext):
     if 'contact_messages' in context.user_data:
         del context.user_data['contact_messages']
     
-    query.edit_message_text(
+    await query.edit_message_text(
         "منوی اصلی - لطفاً یکی از گزینه‌های زیر را انتخاب کنید:",
         reply_markup=reply_markup
     )
 
-def finish_contact(update: Update, context: CallbackContext):
+async def finish_contact(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
+    await query.answer()
     user = query.from_user
     
     if 'contact_messages' in context.user_data and context.user_data['contact_messages']:
@@ -215,9 +230,13 @@ def finish_contact(update: Update, context: CallbackContext):
 
 📨 محتوای پیام:
 """
-            context.bot.send_message(chat_id=REPRESENTATIVE_ID, text=user_info)
+            await context.bot.send_message(chat_id=REPRESENTATIVE_ID, text=user_info)
             
-            query.edit_message_text(
+            # پاک کردن داده‌ها
+            del context.user_data['contact_messages']
+            del context.user_data['waiting_for_contact']
+            
+            await query.edit_message_text(
                 "✅ پیام شما با موفقیت ارسال شد!\n\n"
                 "از اینکه نظر خود را با ما در میان گذاشتید سپاسگزاریم.\n"
                 "پاسخ شما در اسرع وقت داده خواهد شد."
@@ -225,40 +244,40 @@ def finish_contact(update: Update, context: CallbackContext):
             
         except Exception as e:
             logger.error(f"Error sending contact messages: {e}")
-            query.edit_message_text("⚠️ خطا در ارسال پیام")
+            await query.edit_message_text("⚠️ خطا در ارسال پیام")
     else:
-        query.edit_message_text(
+        await query.edit_message_text(
             "⚠️ هیچ پیامی برای ارسال وجود ندارد.\n\n"
             "لطفاً ابتدا پیام خود را ارسال کنید سپس بر روی دکمه 'پایان و ارسال' کلیک کنید."
         )
 
 # مدیریت کلیک روی دکمه‌ها
-def button_handler(update: Update, context: CallbackContext):
+async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
-    query.answer()
+    await query.answer()
     
     try:
         if query.data == "candidate_info":
-            candidate_callback(update, context)
+            await candidate_callback(update, context)
         elif query.data == "photos":
-            photos_callback(update, context)
+            await photos_callback(update, context)
         elif query.data == "resume":
-            resume_callback(update, context)
+            await resume_callback(update, context)
         elif query.data == "ideas":
-            ideas_callback(update, context)
+            await ideas_callback(update, context)
         elif query.data == "addresses":
-            addresses_callback(update, context)
+            await addresses_callback(update, context)
         elif query.data == "contact":
-            contact_callback(update, context)
+            await contact_callback(update, context)
         elif query.data == "main_menu":
-            show_main_menu(update, context)
+            await show_main_menu(update, context)
         elif query.data == "finish_contact":
-            finish_contact(update, context)
+            await finish_contact(update, context)
     except Exception as e:
         logger.error(f"Error in button_handler: {e}")
 
 # مدیریت دریافت پیام‌های متنی
-def text_handler(update: Update, context: CallbackContext):
+async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('waiting_for_contact', False):
         # ذخیره پیام متنی
         if 'contact_messages' not in context.user_data:
@@ -266,13 +285,13 @@ def text_handler(update: Update, context: CallbackContext):
         
         context.user_data['contact_messages'].append(('text', update.message.text))
         
-        update.message.reply_text(
+        await update.message.reply_text(
             "✅ متن شما دریافت شد.\n"
             "می‌توانید پیام دیگری ارسال کنید یا بر روی 'پایان و ارسال' کلیک کنید."
         )
 
 # مدیریت دریافت عکس
-def photo_handler(update: Update, context: CallbackContext):
+async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('waiting_for_contact', False):
         # ذخیره عکس
         if 'contact_messages' not in context.user_data:
@@ -281,13 +300,13 @@ def photo_handler(update: Update, context: CallbackContext):
         photo = update.message.photo[-1]  # بزرگترین سایز
         context.user_data['contact_messages'].append(('photo', photo.file_id))
         
-        update.message.reply_text(
+        await update.message.reply_text(
             "✅ عکس شما دریافت شد.\n"
             "می‌توانید پیام دیگری ارسال کنید یا بر روی 'پایان و ارسال' کلیک کنید."
         )
 
 # مدیریت دریافت پیام صوتی
-def voice_handler(update: Update, context: CallbackContext):
+async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.user_data.get('waiting_for_contact', False):
         # ذخیره ویس
         if 'contact_messages' not in context.user_data:
@@ -296,37 +315,33 @@ def voice_handler(update: Update, context: CallbackContext):
         voice = update.message.voice
         context.user_data['contact_messages'].append(('voice', voice.file_id))
         
-        update.message.reply_text(
+        await update.message.reply_text(
             f"✅ ویس شما دریافت شد.\n"
             f"مدت زمان: {voice.duration} ثانیه\n"
             f"می‌توانید پیام دیگری ارسال کنید یا بر روی 'پایان و ارسال' کلیک کنید."
         )
 
 # مدیریت خطا
-def error_handler(update: Update, context: CallbackContext):
+async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Update caused error: {context.error}")
 
 def main():
     """تابع اصلی"""
     try:
-        # ساخت updater
-        updater = Updater(BOT_TOKEN, use_context=True)
-        
-        # گرفتن dispatcher
-        dp = updater.dispatcher
+        # ساخت اپلیکیشن
+        application = Application.builder().token(BOT_TOKEN).build()
         
         # اضافه کردن هندلرها
-        dp.add_handler(CommandHandler("start", start))
-        dp.add_handler(CallbackQueryHandler(button_handler))
-        dp.add_handler(MessageHandler(Filters.voice, voice_handler))
-        dp.add_handler(MessageHandler(Filters.text & ~Filters.command, text_handler))
-        dp.add_handler(MessageHandler(Filters.photo, photo_handler))
-        dp.add_error_handler(error_handler)
+        application.add_handler(CommandHandler("start", start))
+        application.add_handler(CallbackQueryHandler(button_handler))
+        application.add_handler(MessageHandler(filters.VOICE, voice_handler))
+        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
+        application.add_handler(MessageHandler(filters.PHOTO, photo_handler))
+        application.add_error_handler(error_handler)
         
         # اجرای بات
         logger.info("✅ بات نماینده شروع به کار کرد...")
-        updater.start_polling()
-        updater.idle()
+        application.run_polling()
         
     except Exception as e:
         logger.error(f"Failed to start bot: {e}")
