@@ -67,8 +67,8 @@ async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Update caused error: {context.error}")
 
-async def main():
-    """تابع اصلی با وب‌هوک واقعی"""
+def main():
+    """تابع اصلی - ساده و مطمئن"""
     try:
         # ساخت اپلیکیشن
         application = Application.builder().token(BOT_TOKEN).build()
@@ -81,30 +81,16 @@ async def main():
         application.add_handler(MessageHandler(filters.VOICE, voice_handler))
         application.add_error_handler(error_handler)
         
-        # تنظیمات وب‌هوک برای Render
-        PORT = int(os.environ.get('PORT', 10000))
-        RENDER_URL = os.environ.get('RENDER_EXTERNAL_URL', f'http://localhost:{PORT}')
+        logger.info("🤖 بات در حال راه‌اندازی...")
         
-        logger.info(f"🚀 راه‌اندازی بات روی {RENDER_URL}")
-        
-        # تنظیم وب‌هوک
-        await application.bot.set_webhook(
-            url=f"{RENDER_URL}/{BOT_TOKEN}",
-            drop_pending_updates=True
-        )
-        
-        # راه‌اندازی سرور وب‌هوک
-        await application.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            url_path=BOT_TOKEN,
-            webhook_url=RENDER_URL,
-            secret_token="WEBHOOK_SECRET"
+        # اجرای ساده با polling
+        application.run_polling(
+            drop_pending_updates=True,
+            allowed_updates=Update.ALL_TYPES
         )
         
     except Exception as e:
         logger.error(f"خطا در راه‌اندازی بات: {e}")
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
