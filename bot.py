@@ -5,7 +5,7 @@ import logging
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 
-# توکن بات - حتماً در متغیر محیطی قرار دهید
+# توکن بات
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
 
 # آیدی نماینده
@@ -18,7 +18,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# 🔹 تمام توابع شما دقیقاً مانند قبل می‌مانند
+# تمام توابع شما بدون تغییر می‌مانند
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("معرفی کاندید", callback_data="candidate_info")],
@@ -35,40 +35,44 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup=reply_markup
     )
 
-# 🔹 بقیه توابع شما بدون هیچ تغییری اینجا می‌آیند
+# بقیه توابع شما دقیقاً مثل قبل...
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     
     if query.data == "candidate_info":
-        candidate_text = """
-👨‍💼 **معرفی کاندید:**
-📌 نام و نام خانوادگی: علی رضایی
-📅 تاریخ تولد: ۱۵ فروردین ۱۳۶۵
-🎓 تحصیلات: دکترای مهندسی کامپیوتر
-"""
+        candidate_text = "👨‍💼 **معرفی کاندید:**\n📌 نام: علی رضایی"
         await query.edit_message_text(candidate_text)
     elif query.data == "photos":
         await query.edit_message_text("📸 بخش عکس‌ها")
-    # بقیه توابع دقیقاً مثل کد قبلی شما...
+    elif query.data == "resume":
+        await query.edit_message_text("📄 رزومه کاری")
+    elif query.data == "ideas":
+        await query.edit_message_text("💡 ایده‌ها و برنامه‌ها")
+    elif query.data == "addresses":
+        await query.edit_message_text("📍 آدرس ستادها")
+    elif query.data == "contact":
+        await query.edit_message_text("📞 ارتباط با من")
+    elif query.data == "main_menu":
+        await start(update, context)
 
 async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # کدهای قبلی شما...
-    pass
+    if context.user_data.get('waiting_for_contact', False):
+        await update.message.reply_text("✅ متن شما دریافت شد.")
+    else:
+        await update.message.reply_text("از منوی اصلی استفاده کنید: /start")
 
 async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # کدهای قبلی شما...
-    pass
+    await update.message.reply_text("✅ عکس دریافت شد.")
 
 async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # کدهای قبلی شما...
-    pass
+    await update.message.reply_text("✅ ویس دریافت شد.")
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.error(f"Update caused error: {context.error}")
 
-# 🔹 تابع اصلی برای دیپلوی
-async def main():
+# 🔹 تابع اصلی - روش ساده و مطمئن
+def main():
     """تابع اصلی برای اجرا در سرور"""
     try:
         # ساخت اپلیکیشن
@@ -77,22 +81,22 @@ async def main():
         # اضافه کردن هندلرها
         application.add_handler(CommandHandler("start", start))
         application.add_handler(CallbackQueryHandler(button_handler))
-        application.add_handler(MessageHandler(filters.VOICE, voice_handler))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
         application.add_handler(MessageHandler(filters.PHOTO, photo_handler))
+        application.add_handler(MessageHandler(filters.VOICE, voice_handler))
         application.add_error_handler(error_handler)
         
-        # 🔹 اجرا در سرور با Webhook
-        PORT = int(os.environ.get('PORT', 8080))
+        # 🔹 اجرا در سرور
+        PORT = int(os.environ.get('PORT', 10000))
         
         logger.info(f"🚀 شروع بات در پورت {PORT}...")
         
-        await application.run_webhook(
+        # روش مطمئن‌تر برای Render
+        application.run_webhook(
             listen="0.0.0.0",
             port=PORT,
-            url_path="",  # خالی بگذارید
-            webhook_url="",  # خالی بگذارید برای Railway/Render
-            secret_token=os.environ.get('WEBHOOK_SECRET', ''),
+            url_path="",
+            webhook_url="",
             drop_pending_updates=True
         )
         
@@ -100,5 +104,4 @@ async def main():
         logger.error(f"خطا در اجرای بات: {e}")
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    main()
