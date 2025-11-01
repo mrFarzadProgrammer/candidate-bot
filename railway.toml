@@ -1,9 +1,0 @@
-[service]
-type = "web"
-name = "candidate-bot"
-
-[deploy]
-startCommand = "python bot.py"
-
-[variables]
-BOT_TOKEN = "8327912063:AAEh4Q_mrVsAl9GYiSLTnQH-Cg251RxCyCY"

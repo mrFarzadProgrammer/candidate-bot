@@ -10,3 +10,8 @@ bot_env/
 .env
 .DS_Store
 Thumbs.db
+
+# فایل‌های توسعه
+dev_config.py
+test_*.py
+*.log
