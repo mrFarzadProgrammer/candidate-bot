@@ -1,17 +1,25 @@
+# فایل‌های محیطی
+.env
+.dev.env
+*.env
+
+# لاگ‌ها
+*.log
+logs/
+
+# پایتون
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
-.Python
-env/
+
+# محیط مجازی
 venv/
-bot_env/
-*.log
-.env
+env/
+
+# سیستم
 .DS_Store
 Thumbs.db
 
-# فایل‌های توسعه
-dev_config.py
-test_*.py
-*.log
+# توسعه
+dev/.env.dev
