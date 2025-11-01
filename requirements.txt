@@ -1,1 +1,1 @@
-python-telegram-bot[job-queue,webhooks]==13.15
+python-telegram-bot[job-queue,webhooks]==21.7
