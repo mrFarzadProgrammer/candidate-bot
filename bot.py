@@ -1,23 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
 import logging
+from aiohttp import web
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # توکن بات
 BOT_TOKEN = os.environ.get('BOT_TOKEN', '8327912063:AAEh4Q_mrVsAl9GYiSLTnQH-Cg251RxCyCY')
 
-# آیدی نماینده
-REPRESENTATIVE_ID = 96763697
-
 # تنظیمات لاگ
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# دستور /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [
         [InlineKeyboardButton("معرفی کاندید", callback_data="candidate_info")],
@@ -28,88 +22,51 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("ارتباط با من", callback_data="contact")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    
-    await update.message.reply_text(
-        "🌟 به بات کاندید خوش آمدید!\nلطفاً یکی از گزینه‌ها را انتخاب کنید:",
-        reply_markup=reply_markup
-    )
+    await update.message.reply_text("🌟 به بات کاندید خوش آمدید!", reply_markup=reply_markup)
 
-# مدیریت دکمه‌ها
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    
-    if query.data == "candidate_info":
-        candidate_text = "👨‍💼 **معرفی کاندید:**\n📌 نام: علی رضایی"
-        await query.edit_message_text(candidate_text)
-    elif query.data == "photos":
-        await query.edit_message_text("📸 بخش عکس‌ها")
-    elif query.data == "resume":
-        await query.edit_message_text("📄 رزومه کاری")
-    elif query.data == "ideas":
-        await query.edit_message_text("💡 ایده‌ها و برنامه‌ها")
-    elif query.data == "addresses":
-        await query.edit_message_text("📍 آدرس ستادها")
-    elif query.data == "contact":
-        await query.edit_message_text("📞 ارتباط با من")
-    elif query.data == "main_menu":
-        await start(update, context)
+    await query.edit_message_text("✅ بات فعال است!")
 
-async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ پیام شما دریافت شد.")
-
-async def photo_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ عکس دریافت شد.")
-
-async def voice_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("✅ ویس دریافت شد.")
-
-async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    logger.error(f"Update caused error: {context.error}")
-
-async def setup_webhook(application: Application, webhook_url: str):
-    """تنظیم وب‌هوک برای تلگرام"""
-    webhook_url = f"{webhook_url}/{BOT_TOKEN}"
-    await application.bot.set_webhook(
-        url=webhook_url,
-        drop_pending_updates=True
-    )
-    logger.info(f"✅ Webhook set to: {webhook_url}")
-
-async def main():
-    """تابع اصلی - فقط Webhook"""
+async def handle_webhook(request):
+    """دریافت پیام‌های وب‌هوک از تلگرام"""
     try:
-        # ساخت اپلیکیشن
-        application = Application.builder().token(BOT_TOKEN).build()
-        
-        # اضافه کردن هندلرها
-        application.add_handler(CommandHandler("start", start))
-        application.add_handler(CallbackQueryHandler(button_handler))
-        application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, text_handler))
-        application.add_handler(MessageHandler(filters.PHOTO, photo_handler))
-        application.add_handler(MessageHandler(filters.VOICE, voice_handler))
-        application.add_error_handler(error_handler)
-        
-        # تنظیمات Webhook
-        PORT = int(os.environ.get('PORT', 10000))
-        WEBHOOK_BASE_URL = os.environ.get('RENDER_EXTERNAL_URL', f'https://candidate-bot.onrender.com')
-        
-        logger.info(f"🚀 راه‌اندازی Webhook روی پورت {PORT}")
-        
-        # تنظیم وب‌هوک
-        await setup_webhook(application, WEBHOOK_BASE_URL)
-        
-        # راه‌اندازی سرور Webhook
-        await application.run_webhook(
-            listen="0.0.0.0",
-            port=PORT,
-            secret_token="WEBHOOK_SECRET",
-            drop_pending_updates=True
-        )
-        
+        data = await request.json()
+        update = Update.de_json(data, request.app['bot'])
+        await request.app['application'].process_update(update)
+        return web.Response(text="OK")
     except Exception as e:
-        logger.error(f"خطا در راه‌اندازی بات: {e}")
+        logger.error(f"خطا در پردازش وب‌هوک: {e}")
+        return web.Response(status=400)
+
+async def health_check(request):
+    """بررسی سلامت"""
+    return web.Response(text="Bot is running!")
+
+async def init_app():
+    """راه‌اندازی برنامه"""
+    # ساخت اپلیکیشن تلگرام
+    application = Application.builder().token(BOT_TOKEN).build()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button_handler))
+    
+    await application.initialize()
+    await application.start()
+    
+    # ساخت اپلیکیشن aiohttp
+    app = web.Application()
+    app['bot'] = application.bot
+    app['application'] = application
+    
+    # مسیرها
+    app.router.add_post(f'/{BOT_TOKEN}', handle_webhook)
+    app.router.add_get('/', health_check)
+    app.router.add_get('/health', health_check)
+    
+    return app
 
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    # راه‌اندازی سرور
+    PORT = int(os.environ.get('PORT', 10000))
+    web.run_app(init_app(), host='0.0.0.0', port=PORT)
